@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useAuth } from '../hooks/useAuth'
 import { EmployeeTable } from '../components/EmployeeTable'
 import { EmployeeFilters } from '../components/EmployeeFilters'
 import { PaginationControls } from '../components/PaginationControls'
@@ -11,7 +10,6 @@ import { employeeService, type EmployeeFilters as EmployeeFiltersInput } from '.
 const EMPLOYEES_PAGE_SIZE = 20
 
 export function EmployeesPage() {
-  const { logout } = useAuth()
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('')
   const [selectedPositionName, setSelectedPositionName] = useState('')
 
@@ -44,8 +42,6 @@ export function EmployeesPage() {
 
   return (
     <div>
-      <p>Sesión iniciada.</p>
-      <button onClick={logout}>Cerrar sesión</button>
       <ReportGenerator />
       <EmployeeFilters
         departments={departmentList}
