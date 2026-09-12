@@ -55,6 +55,22 @@ El test (`src/components/EmployeeTable.test.tsx`) monta `EmployeeTable` + `Pagin
 
 **Setup:** `vite.config.ts` agrega el bloque `test` (`environment: 'jsdom'`, `setupFiles: './src/setupTests.ts'`). `setupTests.ts` importa `@testing-library/jest-dom/vitest` (matchers como `toBeInTheDocument`) y registra `afterEach(cleanup)` a mano — sin `test.globals: true` en la config, RTL no detecta un `afterEach` global automático para desmontar el DOM entre tests. Scripts: `npm run test` (una corrida) y `npm run test:watch`.
 
+### 6 — Framework de diseño UI: Tailwind CSS
+
+Hasta este punto todos los componentes (`LoginForm`, `EmployeeTable`, `DeviceTable`, `EmployeeFilters`, `PaginationControls`, `ReportGenerator`) se construyeron deliberadamente headless: HTML semántico (`<form>`, `<table>`, `<select>`) sin ninguna clase, apoyado sólo en el CSS por defecto que trae la plantilla de Vite. Esta actividad agrega el estilo como una capa separada, sin tocar props/estado/lógica de ningún componente.
+
+Se evaluaron tres opciones:
+
+| Opción | Cómo se aplica | Costo de adopción | Encaje con la arquitectura headless |
+|---|---|---|---|
+| **Tailwind CSS** (elegida) | Clases utilitarias agregadas directamente en el `className` de los elementos nativos existentes | Un plugin de Vite (`@tailwindcss/vite`) + un `@import "tailwindcss"` en `index.css`; sin `ThemeProvider` ni configuración de tema obligatoria | Alto: no exige reemplazar `<table>`/`<select>`/`<form>` por componentes propios, sólo decora el markup ya existente |
+| MUI / Chakra UI | Reemplazando los elementos nativos por sus propios componentes (`<Table>`, `<Select>`, `<TextField>`) para aprovechar el theming | Requiere `ThemeProvider`, motor CSS-in-JS (emotion/Emotion runtime), y curva de aprendizaje de su API de componentes | Bajo: para obtener valor real hay que sustituir el markup, lo que se acerca a una reescritura de la capa de presentación en vez de una capa aditiva |
+| Bootstrap | Clases utilitarias + componentes JS opcionales (modales, dropdowns) | Ligero, pero trae convenciones visuales muy reconocibles/genéricas y parte de su valor (componentes JS) no aplica en un proyecto React | Medio: funciona por clases como Tailwind, pero su sistema de grillas/componentes está pensado para HTML plano, no para composición de componentes React |
+
+**Por qué Tailwind:** el proyecto es chico y el objetivo de esta etapa es demostrar criterio técnico, no llegar a un pixel-perfect de producción. Tailwind permite mantener exactamente la misma estructura de componentes (mismos elementos, mismas props) y sumar sólo la presentación vía `className`, que es justo la definición de "capa separada" que se buscaba desde el diseño headless inicial. MUI/Chakra hubieran significado más valor visual "gratis" (componentes ya armados), pero a costa de tocar el markup interno de cada componente y sumar una dependencia de runtime (CSS-in-JS) que no se justifica para el tamaño de este challenge.
+
+**Qué se tocó:** sólo `className` (y, en `LoginForm`/`App`, algún `<div>` envolvente para poder centrar/dar layout) en `frontend/src/components/*.tsx`, `frontend/src/pages/*.tsx` y `frontend/src/App.tsx`. `frontend/src/index.css` quedó reducido a `@import "tailwindcss"` más el fondo/tipografía base del `body`; `vite.config.ts` suma el plugin `@tailwindcss/vite`. Ningún hook, manager, service o test cambió.
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

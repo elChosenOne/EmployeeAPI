@@ -6,20 +6,20 @@ interface DeviceTableProps {
 
 export function DeviceTable({ devices }: DeviceTableProps) {
   return (
-    <table>
-      <thead>
+    <table className="w-full border-collapse overflow-hidden rounded-lg border border-slate-200 bg-white text-left text-sm">
+      <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-500">
         <tr>
-          <th>Nombre</th>
-          <th>Ubicación</th>
-          <th>Zona horaria</th>
+          <th className="px-4 py-2 font-medium">Nombre</th>
+          <th className="px-4 py-2 font-medium">Ubicación</th>
+          <th className="px-4 py-2 font-medium">Zona horaria</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className="divide-y divide-slate-200">
         {devices.map((device) => (
-          <tr key={device.id ?? device.name}>
-            <td>{device.name}</td>
-            <td>{device.location}</td>
-            <td>{device.timezone}</td>
+          <tr key={device.id ?? device.name} className="hover:bg-slate-50">
+            <td className="px-4 py-2 text-slate-900">{device.name}</td>
+            <td className="px-4 py-2 text-slate-600">{device.location}</td>
+            <td className="px-4 py-2 text-slate-600">{device.timezone}</td>
           </tr>
         ))}
       </tbody>

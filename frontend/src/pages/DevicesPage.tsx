@@ -13,9 +13,14 @@ export function DevicesPage() {
 
   return (
     <div>
-      {table.status === 'loading' && <p>Cargando...</p>}
-      {table.status === 'error' && <p role="alert">{table.error}</p>}
-      {table.isEmpty && <p>No hay dispositivos para mostrar.</p>}
+      <h1 className="mb-4 text-2xl font-semibold text-slate-900">Dispositivos</h1>
+      {table.status === 'loading' && <p className="text-sm text-slate-500">Cargando...</p>}
+      {table.status === 'error' && (
+        <p role="alert" className="text-sm text-red-600">
+          {table.error}
+        </p>
+      )}
+      {table.isEmpty && <p className="text-sm text-slate-500">No hay dispositivos para mostrar.</p>}
       <DeviceTable devices={table.items} />
       <PaginationControls
         page={table.page}

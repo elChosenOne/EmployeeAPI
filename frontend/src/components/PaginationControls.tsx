@@ -25,14 +25,22 @@ export function PaginationControls({
   const lastItem = Math.min(page * pageSize, totalItems)
 
   return (
-    <div>
-      <button onClick={onPrev} disabled={!canGoPrev}>
+    <div className="mt-4 flex items-center justify-between gap-4 text-sm">
+      <button
+        onClick={onPrev}
+        disabled={!canGoPrev}
+        className="rounded-md border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+      >
         Anterior
       </button>
-      <span>
+      <span className="text-slate-600">
         {firstItem}-{lastItem} de {totalItems} (página {page} de {totalPages})
       </span>
-      <button onClick={onNext} disabled={!canGoNext}>
+      <button
+        onClick={onNext}
+        disabled={!canGoNext}
+        className="rounded-md border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+      >
         Siguiente
       </button>
     </div>

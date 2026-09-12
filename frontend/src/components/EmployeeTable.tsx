@@ -6,22 +6,22 @@ interface EmployeeTableProps {
 
 export function EmployeeTable({ employees }: EmployeeTableProps) {
   return (
-    <table>
-      <thead>
+    <table className="w-full border-collapse overflow-hidden rounded-lg border border-slate-200 bg-white text-left text-sm">
+      <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-500">
         <tr>
-          <th>Nombre</th>
-          <th>Email</th>
-          <th>Departamento</th>
-          <th>Cargo</th>
+          <th className="px-4 py-2 font-medium">Nombre</th>
+          <th className="px-4 py-2 font-medium">Email</th>
+          <th className="px-4 py-2 font-medium">Departamento</th>
+          <th className="px-4 py-2 font-medium">Cargo</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className="divide-y divide-slate-200">
         {employees.map((employee) => (
-          <tr key={employee.id ?? employee.email}>
-            <td>{employee.name}</td>
-            <td>{employee.email}</td>
-            <td>{employee.department}</td>
-            <td>{employee.position}</td>
+          <tr key={employee.id ?? employee.email} className="hover:bg-slate-50">
+            <td className="px-4 py-2 text-slate-900">{employee.name}</td>
+            <td className="px-4 py-2 text-slate-600">{employee.email}</td>
+            <td className="px-4 py-2 text-slate-600">{employee.department}</td>
+            <td className="px-4 py-2 text-slate-600">{employee.position}</td>
           </tr>
         ))}
       </tbody>
