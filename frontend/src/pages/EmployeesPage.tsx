@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth'
 import { EmployeeTable } from '../components/EmployeeTable'
 import { EmployeeFilters } from '../components/EmployeeFilters'
 import { PaginationControls } from '../components/PaginationControls'
+import { ReportGenerator } from '../components/ReportGenerator'
 import { useTableData } from '../managers/tableData'
 import { employeeService, type Department, type EmployeeFilters as EmployeeFiltersInput, type Position } from '../services/employeeService'
 
@@ -55,6 +56,7 @@ export function EmployeesPage() {
     <div>
       <p>Sesión iniciada.</p>
       <button onClick={logout}>Cerrar sesión</button>
+      <ReportGenerator />
       {filterError && <p role="alert">{filterError}</p>}
       <EmployeeFilters
         departments={departments}

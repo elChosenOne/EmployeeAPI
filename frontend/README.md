@@ -26,6 +26,27 @@ La paginación 100% cliente (la implementada acá) conviene cuando:
 
 El costo de la paginación cliente es que cada carga inicial trae el listado completo (más payload/memoria por request) y no escala indefinidamente; a partir de cierto volumen, la paginación real del backend (con sus headers `X-Total-Count`/`X-Total-Pages`) es la opción correcta.
 
+### 4.b — Polling del reporte asíncrono (`POST /api/report/generate` + `GET /api/report/{id}/status`)
+
+El endpoint `POST /api/report/generate` devuelve `202 Accepted` con un `executionId` y arranca un job en memoria que el backend deja en `Processing` durante ~8s antes de pasar a `Completed` (`Services/ReportService.cs`). El frontend no conoce esa duración de antemano (en un backend real sería variable), así que el ciclo completo se resolvió como:
+
+- **`frontend/src/queries/reportQueries.ts`** — llamadas HTTP crudas (`generateReport`, `getReportStatus`) y el mapeo de tipos. El backend serializa el enum `ReportStatus` como número (`0 = Processing`, `1 = Completed`, confirmado contra el backend corriendo) porque `Program.cs` no registra `JsonStringEnumConverter`; se traduce acá a `'Processing' | 'Completed'` para que el resto del frontend no dependa de ese detalle de serialización.
+- **`frontend/src/services/reportService.ts`** — capa fina de orquestación (`generate` / `getStatus`) sobre las queries, mismo patrón que `employeeService`.
+- **`frontend/src/hooks/useReportGeneration.ts`** — dueño del ciclo de vida completo del polling (dispara la generación, pollea el estado, expone `status`/`result`/`error`). Vive en `hooks/` (no en `managers/`) porque, a diferencia de `useTableData`/`useListPagination`, no es un manager de datos tabulares reutilizable entre dominios: es el flujo de negocio específico de "generar reporte y esperar el resultado".
+- **`frontend/src/components/ReportGenerator.tsx`** — componente de presentación que consume el hook (mismo patrón que `LoginForm` con `useAuth`), montado como sección dentro de `EmployeesPage` (no se creó una página/ruta propia: el proyecto no usa `react-router` — ver 4.6 — sino un switch simple `Login` vs `Employees` en `App.tsx`, y el reporte es una vista auxiliar de ese mismo listado, no una sección de navegación independiente).
+
+**Intervalo de polling — backoff progresivo:** en vez de un intervalo fijo, cada consulta agenda la siguiente con `setTimeout` (no `setInterval`, para no solapar un fetch en vuelo con el siguiente) y el intervalo crece `×1.5` en cada vuelta partiendo de 1s hasta un tope de 8s (`INITIAL_POLL_INTERVAL_MS` / `MAX_POLL_INTERVAL_MS` / `POLL_BACKOFF_FACTOR`). Un intervalo fijo corto (ej. 500ms) es responsivo para jobs cortos pero satura al backend si el job tarda minutos; uno fijo largo (ej. 5s) es liviano para jobs largos pero se siente lento para el caso feliz de este ejercicio (~8s). El backoff progresivo da lo mejor de ambos: reacciona rápido al principio y se relaja a medida que el job tarda más, sin necesidad de saber de antemano cuánto va a durar.
+
+**Timeout:** si el job no llega a `Completed` dentro de `MAX_POLL_DURATION_MS` (60s), el hook corta el polling y pasa a un estado `'timeout'` con un mensaje de error, en vez de seguir preguntando indefinidamente. El usuario puede volver a presionar "Generar reporte" para reintentar (dispara una ejecución nueva).
+
+**Limpieza al desmontar / al regenerar:** el polling vive en un `useEffect` con `[executionId]` como dependencia; su cleanup hace `controller.abort()` + `clearTimeout(timeoutId)`. Eso cubre dos casos con el mismo mecanismo:
+- El usuario navega fuera de la vista mientras el job está `Processing` → React llama al cleanup al desmontar `EmployeesPage`/`ReportGenerator`, y el `fetch` en vuelo se aborta.
+- El usuario dispara una nueva generación antes de que la anterior termine → cambia `executionId`, React limpia el efecto anterior (aborta su polling) antes de correr el nuevo.
+
+La llamada inicial (`POST /generate`) se protege aparte con un `AbortController` en un `ref` (abortado también al desmontar el componente), porque no corre dentro de un `useEffect` con cleanup automático — la dispara un handler de click.
+
+**Gotcha no obvio:** `queries/httpClient.ts` (`authFetch`) trata cualquier fallo de `fetch` como posible sesión expirada (revisa `/health` y desloguea si el backend sigue vivo — ver comentario existente sobre CORS en 401). Un `AbortError` deliberado (por el cleanup de arriba) entraba en ese mismo camino y hubiera provocado un logout espurio cada vez que se cancelaba un polling. Se ajustó `authFetch` para detectar `DOMException` con `name === 'AbortError'` y repropagarlo de inmediato, sin pasar por la verificación de sesión.
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

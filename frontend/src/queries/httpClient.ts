@@ -45,6 +45,13 @@ export async function authFetch(path: string, init: RequestInit = {}): Promise<R
   try {
     response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
   } catch (networkError) {
+    // Un abort intencional (AbortController.abort(), p. ej. al cancelar un polling)
+    // llega acá como error de fetch; no es una falla de red real ni motivo para
+    // dar la sesión por expirada, así que se repropaga tal cual.
+    if (networkError instanceof DOMException && networkError.name === 'AbortError') {
+      throw networkError
+    }
+
     if (session && (await checkHealth())) {
       onUnauthorized?.()
       throw new SessionExpiredError()
