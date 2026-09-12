@@ -71,6 +71,23 @@ Se evaluaron tres opciones:
 
 **Qué se tocó:** sólo `className` (y, en `LoginForm`/`App`, algún `<div>` envolvente para poder centrar/dar layout) en `frontend/src/components/*.tsx`, `frontend/src/pages/*.tsx` y `frontend/src/App.tsx`. `frontend/src/index.css` quedó reducido a `@import "tailwindcss"` más el fondo/tipografía base del `body`; `vite.config.ts` suma el plugin `@tailwindcss/vite`. Ningún hook, manager, service o test cambió.
 
+### 7 — Expiración de sesión
+
+`Controllers/AuthController.cs` no expone un endpoint de refresh: la única forma de renovar el token es volver a pegarle a `POST /api/auth/login` (`Models/Tools.IsTokenValid` sólo decide si el token *actual* sigue siendo válido en cada request protegido). Sin refresh real posible del lado del backend, se evaluaron dos formas de manejar la expiración desde el frontend:
+
+| Enfoque | Cómo detecta la expiración | Requiere backend | Complejidad agregada |
+|---|---|---|---|
+| **(a) Aviso proactivo con `expiresAtUtc`** | Se programa un timer/chequeo con el `expiresAtUtc` que ya devuelve el login, y se avisa (banner/modal) antes de que venza | No | Timer que sobrevive re-renders, sincronización con el reloj del cliente, UI de "sesión por vencer" con opción de re-loguearse, y manejo del caso en que la pestaña estuvo en background y el timer no corrió |
+| **(b) Detección reactiva en el 401 + mensaje claro** (elegido) | Ya implementada como parte del objetivo 1: `authFetch` (`frontend/src/queries/httpClient.ts`) intercepta el 401 (o el fallo de red equivalente, ver comentario ahí sobre CORS) y dispara `onUnauthorized` | No | Mínima: sólo distinguir el mensaje de "sesión expirada" del logout manual |
+
+**Por qué (b):** como no hay refresh real, un aviso proactivo (a) sólo compra tiempo para que el usuario guarde su trabajo antes de que la sesión caiga sola, pero igual termina en el mismo lugar que (b): re-loguearse. Agregar un timer paralelo al `expiresAtUtc` para ese beneficio marginal no se justifica en este alcance (la ventana de expiración del backend es corta y el challenge no tiene formularios largos con pérdida de datos en juego). Lo que sí faltaba del objetivo 1 era la claridad: el redirect a `LoginForm` cuando cae el 401 era silencioso — mismo formulario de login, sin explicar por qué se volvió a pedir la sesión.
+
+Se cerró esa brecha sin agregar infraestructura nueva:
+- `AuthContext` (`frontend/src/context/AuthContext.tsx`) separa el logout manual (botón "Cerrar sesión") del automático: `handleSessionExpired` — el handler que se registra vía `setUnauthorizedHandler` — hace el mismo `logout()` pero además setea `sessionExpiredMessage`, un estado nuevo y distinto de `error` (que es para fallos de credenciales al enviar el form).
+- `LoginForm` (`frontend/src/components/LoginForm.tsx`) muestra `sessionExpiredMessage` como un aviso informativo (ámbar, `role="status"`) separado del error de login (rojo, `role="alert"`), y el mensaje se limpia apenas el usuario reintenta loguearse.
+
+Esto cubre el caso real de este backend (sesión que cae y hay que re-loguearse) con el mínimo necesario, sin construir una UX de "renovación" que el backend no puede sostener.
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

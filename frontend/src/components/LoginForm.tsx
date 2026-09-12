@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useAuth } from '../hooks/useAuth'
 
 export function LoginForm() {
-  const { login, isLoading, error } = useAuth()
+  const { login, isLoading, error, sessionExpiredMessage } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
@@ -20,6 +20,11 @@ export function LoginForm() {
         className="w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-white p-8 shadow-sm"
       >
         <h1 className="text-xl font-semibold text-slate-900">Iniciar sesión</h1>
+        {sessionExpiredMessage && (
+          <p role="status" className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {sessionExpiredMessage}
+          </p>
+        )}
         <label className="block text-sm font-medium text-slate-700">
           Usuario
           <input

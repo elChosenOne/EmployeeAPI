@@ -5,6 +5,7 @@ export interface AuthContextValue {
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
+  sessionExpiredMessage: string | null
   login: (credentials: LoginCredentials) => Promise<void>
   logout: () => void
 }
