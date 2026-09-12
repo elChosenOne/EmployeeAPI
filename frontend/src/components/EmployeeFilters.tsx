@@ -1,8 +1,13 @@
+import type { AsyncDataStatus } from '../managers/asyncData'
 import type { Department, Position } from '../services/employeeService'
 
 interface EmployeeFiltersProps {
   departments: Department[]
   positions: Position[]
+  departmentsStatus: AsyncDataStatus
+  departmentsError: string | null
+  positionsStatus: AsyncDataStatus
+  positionsError: string | null
   selectedDepartmentId: string
   selectedPositionName: string
   onDepartmentChange: (departmentId: string) => void
@@ -12,11 +17,20 @@ interface EmployeeFiltersProps {
 export function EmployeeFilters({
   departments,
   positions,
+  departmentsStatus,
+  departmentsError,
+  positionsStatus,
+  positionsError,
   selectedDepartmentId,
   selectedPositionName,
   onDepartmentChange,
   onPositionChange,
 }: EmployeeFiltersProps) {
+  const isLoadingDepartments = departmentsStatus === 'loading'
+  const isLoadingPositions = positionsStatus === 'loading'
+  const hasNoDepartments = departmentsStatus === 'ready' && departments.length === 0
+  const hasNoPositions = positionsStatus === 'ready' && selectedDepartmentId !== '' && positions.length === 0
+
   return (
     <div>
       <label>
@@ -24,6 +38,7 @@ export function EmployeeFilters({
         <select
           value={selectedDepartmentId}
           onChange={(event) => onDepartmentChange(event.target.value)}
+          disabled={isLoadingDepartments}
         >
           <option value="">Todos</option>
           {departments.map((department) => (
@@ -33,13 +48,16 @@ export function EmployeeFilters({
           ))}
         </select>
       </label>
+      {isLoadingDepartments && <span> Cargando departamentos...</span>}
+      {departmentsStatus === 'error' && <p role="alert">{departmentsError}</p>}
+      {hasNoDepartments && <p>No hay departamentos disponibles.</p>}
 
       <label>
         Cargo
         <select
           value={selectedPositionName}
           onChange={(event) => onPositionChange(event.target.value)}
-          disabled={!selectedDepartmentId}
+          disabled={!selectedDepartmentId || isLoadingPositions}
         >
           <option value="">Todos</option>
           {positions.map((position) => (
@@ -49,6 +67,9 @@ export function EmployeeFilters({
           ))}
         </select>
       </label>
+      {isLoadingPositions && <span> Cargando cargos...</span>}
+      {positionsStatus === 'error' && <p role="alert">{positionsError}</p>}
+      {hasNoPositions && <p>No hay cargos para el departamento seleccionado.</p>}
     </div>
   )
 }

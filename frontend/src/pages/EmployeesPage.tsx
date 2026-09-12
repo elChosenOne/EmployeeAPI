@@ -1,42 +1,32 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { EmployeeTable } from '../components/EmployeeTable'
 import { EmployeeFilters } from '../components/EmployeeFilters'
 import { PaginationControls } from '../components/PaginationControls'
 import { ReportGenerator } from '../components/ReportGenerator'
+import { useAsyncData } from '../managers/asyncData'
 import { useTableData } from '../managers/tableData'
-import { employeeService, type Department, type EmployeeFilters as EmployeeFiltersInput, type Position } from '../services/employeeService'
+import { employeeService, type EmployeeFilters as EmployeeFiltersInput } from '../services/employeeService'
 
 const EMPLOYEES_PAGE_SIZE = 20
 
 export function EmployeesPage() {
   const { logout } = useAuth()
-  const [departments, setDepartments] = useState<Department[]>([])
-  const [positions, setPositions] = useState<Position[]>([])
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('')
   const [selectedPositionName, setSelectedPositionName] = useState('')
-  const [filterError, setFilterError] = useState<string | null>(null)
 
-  useEffect(() => {
-    employeeService
-      .listDepartments()
-      .then(setDepartments)
-      .catch((err) => setFilterError(err instanceof Error ? err.message : 'No se pudo cargar los departamentos.'))
-  }, [])
+  const departments = useAsyncData(employeeService.listDepartments, undefined, {
+    errorMessage: 'No se pudo cargar los departamentos.',
+  })
+  const positions = useAsyncData(employeeService.listPositions, selectedDepartmentId, {
+    enabled: Boolean(selectedDepartmentId),
+    errorMessage: 'No se pudo cargar los cargos.',
+  })
 
-  useEffect(() => {
-    if (!selectedDepartmentId) {
-      setPositions([])
-      return
-    }
+  const departmentList = departments.data ?? []
+  const positionList = positions.data ?? []
 
-    employeeService
-      .listPositions(selectedDepartmentId)
-      .then(setPositions)
-      .catch((err) => setFilterError(err instanceof Error ? err.message : 'No se pudo cargar los cargos.'))
-  }, [selectedDepartmentId])
-
-  const selectedDepartment = departments.find((department) => department.id === selectedDepartmentId)
+  const selectedDepartment = departmentList.find((department) => department.id === selectedDepartmentId)
   const employeeFilters: EmployeeFiltersInput = {
     departmentName: selectedDepartment?.name,
     positionName: selectedPositionName || undefined,
@@ -57,10 +47,13 @@ export function EmployeesPage() {
       <p>Sesión iniciada.</p>
       <button onClick={logout}>Cerrar sesión</button>
       <ReportGenerator />
-      {filterError && <p role="alert">{filterError}</p>}
       <EmployeeFilters
-        departments={departments}
-        positions={positions}
+        departments={departmentList}
+        positions={positionList}
+        departmentsStatus={departments.status}
+        departmentsError={departments.error}
+        positionsStatus={positions.status}
+        positionsError={positions.error}
         selectedDepartmentId={selectedDepartmentId}
         selectedPositionName={selectedPositionName}
         onDepartmentChange={handleDepartmentChange}

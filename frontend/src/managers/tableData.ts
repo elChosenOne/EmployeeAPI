@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useAsyncData, type AsyncDataStatus } from './asyncData'
 import { useListPagination, type ListPage } from './listPagination'
 
-export type TableDataStatus = 'idle' | 'loading' | 'error' | 'ready'
+export type TableDataStatus = AsyncDataStatus
 
 export interface TableData<T> extends Omit<ListPage<T>, 'pageItems'> {
   items: T[]
@@ -20,7 +20,8 @@ export interface UseTableDataOptions {
  * Coordina fetch (vía un service) + filtros activos para cualquier listado
  * tabular, y delega la navegación de páginas a useListPagination. No sabe
  * nada de employees/devices/etc.: recibe el fetcher y el objeto de filtros
- * ya armados por el caller.
+ * ya armados por el caller. El fetch + estados idle/loading/error/ready se
+ * delegan a useAsyncData; acá sólo se suma la paginación.
  */
 export function useTableData<T, F>(
   fetcher: (filters: F) => Promise<T[]>,
@@ -29,38 +30,8 @@ export function useTableData<T, F>(
 ): TableData<T> {
   const { pageSize = 20, enabled = true, errorMessage = 'No se pudo cargar el listado.' } = options
 
-  const [allItems, setAllItems] = useState<T[]>([])
-  const [status, setStatus] = useState<TableDataStatus>('idle')
-  const [error, setError] = useState<string | null>(null)
-
-  // Los filtros llegan como objeto literal recreado en cada render del caller;
-  // se comparan por valor (no por referencia) para no refetchear en cada render.
-  const filtersKey = JSON.stringify(filters)
-
-  useEffect(() => {
-    if (!enabled) return
-
-    let cancelled = false
-    setStatus('loading')
-    setError(null)
-
-    fetcher(filters)
-      .then((result) => {
-        if (cancelled) return
-        setAllItems(result)
-        setStatus('ready')
-      })
-      .catch((err) => {
-        if (cancelled) return
-        setError(err instanceof Error ? err.message : errorMessage)
-        setStatus('error')
-      })
-
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetcher, filtersKey, enabled])
+  const { data, status, error } = useAsyncData(fetcher, filters, { enabled, errorMessage })
+  const allItems = data ?? []
 
   // useListPagination resetea a la página 1 cuando allItems cambia de referencia
   // (nuevo fetch), igual que antes lo hacía este hook a mano.
