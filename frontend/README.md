@@ -47,6 +47,14 @@ La llamada inicial (`POST /generate`) se protege aparte con un `AbortController`
 
 **Gotcha no obvio:** `queries/httpClient.ts` (`authFetch`) trata cualquier fallo de `fetch` como posible sesión expirada (revisa `/health` y desloguea si el backend sigue vivo — ver comentario existente sobre CORS en 401). Un `AbortError` deliberado (por el cleanup de arriba) entraba en ese mismo camino y hubiera provocado un logout espurio cada vez que se cancelaba un polling. Se ajustó `authFetch` para detectar `DOMException` con `name === 'AbortError'` y repropagarlo de inmediato, sin pasar por la verificación de sesión.
 
+### 5 — Testing: Vitest + React Testing Library
+
+No había tests en el proyecto; esta fue la primera vez que se configuraron. Se eligió **Vitest** sobre Jest porque el proyecto ya corre sobre Vite: Vitest reutiliza la misma config/transform (`vite.config.ts`, plugin de React, resolución de módulos ESM/TS) sin duplicar configuración de babel/ts-jest ni pagar el costo de arrancar un segundo bundler sólo para tests. Se combina con **React Testing Library** (RTL) porque el estilo de testing que impone (consultar el DOM por rol/texto visible, interactuar como lo haría un usuario) es el que mejor valida el patrón de este frontend: componentes de presentación "tontos" (`EmployeeTable`, `PaginationControls`) alimentados por managers/hooks (`useTableData`) que a su vez llaman a un `service` — probar por accesibilidad/DOM en vez de detalles de implementación permite testear esa integración sin acoplarse a estructura interna.
+
+El test (`src/components/EmployeeTable.test.tsx`) monta `EmployeeTable` + `PaginationControls` cableados con el `useTableData` real (el mismo hook que usa `EmployeesPage`), mockeando únicamente `employeeService.list` — el borde de red — con `vi.spyOn`. Cubre: estado de carga, primera página de filas renderizadas, avance de página con `PaginationControls`, listado vacío y estado de error. No se testeó `EmployeesPage` completo porque además del listado depende de `AuthContext` y de `useReportGeneration` (polling), que son flujos no relacionados con la tabla y hubieran inflado el test con mocks ajenos al objetivo.
+
+**Setup:** `vite.config.ts` agrega el bloque `test` (`environment: 'jsdom'`, `setupFiles: './src/setupTests.ts'`). `setupTests.ts` importa `@testing-library/jest-dom/vitest` (matchers como `toBeInTheDocument`) y registra `afterEach(cleanup)` a mano — sin `test.globals: true` en la config, RTL no detecta un `afterEach` global automático para desmontar el DOM entre tests. Scripts: `npm run test` (una corrida) y `npm run test:watch`.
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
