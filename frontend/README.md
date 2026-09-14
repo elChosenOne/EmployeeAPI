@@ -1,3 +1,43 @@
+## Instrucciones de ejecución
+
+### Requisitos
+
+- Node.js 18+ y npm.
+- La API `EmployeeAPI` corriendo (por ejemplo con `docker compose up --build` desde la raíz del repo, expuesta por defecto en `http://localhost:8080`, Swagger en `/swagger`).
+
+### Configuración
+
+1. Instalar dependencias:
+   ```bash
+   npm install
+   ```
+2. Copiar `.env.example` a `.env` y ajustar `VITE_API_BASE_URL` si la API no corre en `http://localhost:8080`:
+   ```bash
+   cp .env.example .env
+   ```
+
+### Desarrollo
+
+```bash
+npm run dev
+```
+
+Levanta el frontend en modo desarrollo (Vite, HMR) apuntando a `VITE_API_BASE_URL`. Credenciales por defecto de la API: `admin` / `admin`.
+
+### Tests
+
+```bash
+npm run test        # una corrida (usada en CI)
+npm run test:watch  # modo watch
+```
+
+### Build de producción
+
+```bash
+npm run build
+npm run preview
+```
+
 ## Preguntas de arquitectura del challenge
 
 ### 4.a — Estrategia anti-sobrecarga de la tabla de empleados
