@@ -4,7 +4,14 @@ import { ToggleSwitch } from './ToggleSwitch'
 
 export function SettingsPanel() {
   const [isOpen, setIsOpen] = useState(false)
-  const { useComputedDepartments, useMockDevices, setUseComputedDepartments, setUseMockDevices } = useSettings()
+  const {
+    useComputedDepartments,
+    useMockDevices,
+    useComputedPagination,
+    setUseComputedDepartments,
+    setUseMockDevices,
+    setUseComputedPagination,
+  } = useSettings()
 
   return (
     <>
@@ -57,6 +64,23 @@ export function SettingsPanel() {
                     rightLabel="Simulada"
                     checked={useMockDevices}
                     onChange={setUseMockDevices}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-slate-700">Paginación de empleados</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  "API" pide sólo la página actual al servidor (page/pageSize); como el backend no expone el
+                  total por CORS, "Siguiente" avanza sin mostrar cuántas páginas hay en total. "Calculado" trae
+                  el listado completo y pagina en memoria, mostrando el total real.
+                </p>
+                <div className="mt-2">
+                  <ToggleSwitch
+                    leftLabel="API"
+                    rightLabel="Calculado"
+                    checked={useComputedPagination}
+                    onChange={setUseComputedPagination}
                   />
                 </div>
               </div>

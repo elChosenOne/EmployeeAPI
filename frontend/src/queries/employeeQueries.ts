@@ -43,26 +43,44 @@ interface PositionApiResponse {
   departmentId: string
 }
 
-function buildEmployeeQuery(filters: EmployeeFilters): string {
+function buildEmployeeQuery(filters: EmployeeFilters, page?: number, pageSize?: number): string {
   const params = new URLSearchParams()
   if (filters.departmentName) params.set('departmentName', filters.departmentName)
   if (filters.positionName) params.set('positionName', filters.positionName)
+  if (page) params.set('page', String(page))
+  if (pageSize) params.set('pageSize', String(pageSize))
 
   const query = params.toString()
   return query ? `?${query}` : ''
+}
+
+function toEmployee(item: EmployeeApiResponse): Employee {
+  return {
+    id: item.id,
+    name: item.name,
+    email: item.email,
+    department: item.department,
+    position: item.position,
+  }
 }
 
 export async function getEmployees(filters: EmployeeFilters = {}): Promise<Employee[]> {
   const response = await authFetch(`/api/employee${buildEmployeeQuery(filters)}`)
   const data = (await response.json()) as EmployeeApiResponse[]
 
-  return data.map((item) => ({
-    id: item.id,
-    name: item.name,
-    email: item.email,
-    department: item.department,
-    position: item.position,
-  }))
+  return data.map(toEmployee)
+}
+
+// Pide sólo una página al servidor (params page/pageSize), a diferencia de
+// getEmployees que siempre trae el listado completo. El backend sí calcula
+// X-Total-Count/X-Total-Pages, pero no los expone via CORS
+// (Access-Control-Expose-Headers), así que fetch() no puede leerlos: no hay
+// forma de saber el total real de páginas sin tocar el backend.
+export async function getEmployeesPaged(filters: EmployeeFilters, page: number, pageSize: number): Promise<Employee[]> {
+  const response = await authFetch(`/api/employee${buildEmployeeQuery(filters, page, pageSize)}`)
+  const data = (await response.json()) as EmployeeApiResponse[]
+
+  return data.map(toEmployee)
 }
 
 export async function getDepartments(): Promise<Department[]> {

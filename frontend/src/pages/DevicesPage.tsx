@@ -28,6 +28,7 @@ export function DevicesPage() {
       <DeviceTable devices={table.items} />
       <PaginationControls
         page={table.page}
+        pageItemCount={table.items.length}
         totalPages={table.totalPages}
         totalItems={table.totalItems}
         pageSize={table.pageSize}

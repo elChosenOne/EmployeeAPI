@@ -5,15 +5,18 @@ import { PaginationControls } from '../components/PaginationControls'
 import { ReportGenerator } from '../components/ReportGenerator'
 import { useSettings } from '../hooks/useSettings'
 import { useAsyncData } from '../managers/asyncData'
+import { useServerPagination } from '../managers/serverPagination'
 import { useTableData } from '../managers/tableData'
 import { employeeService, type EmployeeFilters as EmployeeFiltersInput } from '../services/employeeService'
 
-const EMPLOYEES_PAGE_SIZE = 20
+const DEFAULT_PAGE_SIZE = 20
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
 
 export function EmployeesPage() {
-  const { useComputedDepartments } = useSettings()
+  const { useComputedDepartments, useComputedPagination } = useSettings()
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('')
   const [selectedPositionName, setSelectedPositionName] = useState('')
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
   // Los ids de departamento/cargo cambian de forma (id real vs. nombre
   // calculado) al togglear la fuente, así que la selección previa deja de
@@ -47,10 +50,16 @@ export function EmployeesPage() {
     positionName: selectedPositionName || undefined,
   }
 
-  const table = useTableData(employeeService.list, employeeFilters, {
-    pageSize: EMPLOYEES_PAGE_SIZE,
+  const clientTable = useTableData(employeeService.list, employeeFilters, {
+    pageSize,
     errorMessage: 'No se pudo cargar el listado.',
+    enabled: useComputedPagination,
   })
+  const serverTable = useServerPagination(employeeService.listPaged, employeeFilters, pageSize, {
+    errorMessage: 'No se pudo cargar el listado.',
+    enabled: !useComputedPagination,
+  })
+  const table = useComputedPagination ? clientTable : serverTable
 
   function handleDepartmentChange(departmentId: string) {
     setSelectedDepartmentId(departmentId)
@@ -83,13 +92,16 @@ export function EmployeesPage() {
       <EmployeeTable employees={table.items} />
       <PaginationControls
         page={table.page}
-        totalPages={table.totalPages}
-        totalItems={table.totalItems}
+        pageItemCount={table.items.length}
+        totalPages={useComputedPagination ? clientTable.totalPages : null}
+        totalItems={useComputedPagination ? clientTable.totalItems : null}
         pageSize={table.pageSize}
         canGoNext={table.canGoNext}
         canGoPrev={table.canGoPrev}
         onNext={table.goToNext}
         onPrev={table.goToPrev}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
+        onPageSizeChange={setPageSize}
       />
     </div>
   )

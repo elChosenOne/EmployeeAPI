@@ -1,6 +1,7 @@
 import {
   getDepartments,
   getEmployees,
+  getEmployeesPaged,
   getPositions,
   type Department,
   type Employee,
@@ -11,6 +12,12 @@ import {
 export const employeeService = {
   async list(filters: EmployeeFilters = {}): Promise<Employee[]> {
     return getEmployees(filters)
+  },
+
+  // Paginación real: pide sólo la página actual al servidor en vez de traer
+  // el listado completo y recortarlo en memoria (comportamiento de `list`).
+  async listPaged(filters: EmployeeFilters, page: number, pageSize: number): Promise<Employee[]> {
+    return getEmployeesPaged(filters, page, pageSize)
   },
 
   async listDepartments(): Promise<Department[]> {
