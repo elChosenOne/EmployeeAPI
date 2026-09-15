@@ -36,6 +36,7 @@ export function DevicesPage() {
         canGoPrev={table.canGoPrev}
         onNext={table.goToNext}
         onPrev={table.goToPrev}
+        onPageChange={table.goToPage}
       />
     </div>
   )

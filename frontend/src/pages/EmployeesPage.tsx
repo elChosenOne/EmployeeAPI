@@ -100,6 +100,7 @@ export function EmployeesPage() {
         canGoPrev={table.canGoPrev}
         onNext={table.goToNext}
         onPrev={table.goToPrev}
+        onPageChange={useComputedPagination ? clientTable.goToPage : undefined}
         pageSizeOptions={PAGE_SIZE_OPTIONS}
         onPageSizeChange={setPageSize}
       />
