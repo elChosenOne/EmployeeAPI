@@ -401,3 +401,6 @@ FodyWeavers.xsd
 /.esperables
 .claude/skills/
 /_maestro
+/.mcp.json
+frontend/pw-check4.mjs
+frontend/pw-shots/

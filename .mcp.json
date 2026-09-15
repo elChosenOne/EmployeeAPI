@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "maestro": {
-      "type": "http",
-      "url": "http://localhost:4444/mcp?projectId=2d5d728d-c538-4ef0-bc8b-f30b4498ba2b&chatId=3ac057f5-dbaf-4c23-b3d7-04c34eb2dda1"
-    }
-  }
-}
