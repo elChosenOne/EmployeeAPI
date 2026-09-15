@@ -399,3 +399,5 @@ FodyWeavers.xsd
 /.challenge
 /.perfil
 /.esperables
+.claude/skills/
+/_maestro
