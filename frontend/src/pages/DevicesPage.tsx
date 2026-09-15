@@ -1,12 +1,16 @@
 import { DeviceTable } from '../components/DeviceTable'
 import { PaginationControls } from '../components/PaginationControls'
+import { useSettings } from '../hooks/useSettings'
 import { useTableData } from '../managers/tableData'
 import { deviceService } from '../services/deviceService'
 
 const DEVICES_PAGE_SIZE = 20
 
 export function DevicesPage() {
-  const table = useTableData(deviceService.list, undefined, {
+  const { useMockDevices } = useSettings()
+  const fetcher = useMockDevices ? deviceService.listMock : deviceService.list
+
+  const table = useTableData(fetcher, undefined, {
     pageSize: DEVICES_PAGE_SIZE,
     errorMessage: 'No se pudo cargar el listado.',
   })

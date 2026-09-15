@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { EmployeeTable } from '../components/EmployeeTable'
 import { EmployeeFilters } from '../components/EmployeeFilters'
 import { PaginationControls } from '../components/PaginationControls'
 import { ReportGenerator } from '../components/ReportGenerator'
+import { useSettings } from '../hooks/useSettings'
 import { useAsyncData } from '../managers/asyncData'
 import { useTableData } from '../managers/tableData'
 import { employeeService, type EmployeeFilters as EmployeeFiltersInput } from '../services/employeeService'
@@ -10,13 +11,29 @@ import { employeeService, type EmployeeFilters as EmployeeFiltersInput } from '.
 const EMPLOYEES_PAGE_SIZE = 20
 
 export function EmployeesPage() {
+  const { useComputedDepartments } = useSettings()
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('')
   const [selectedPositionName, setSelectedPositionName] = useState('')
 
-  const departments = useAsyncData(employeeService.listDepartments, undefined, {
+  // Los ids de departamento/cargo cambian de forma (id real vs. nombre
+  // calculado) al togglear la fuente, así que la selección previa deja de
+  // ser válida y hay que limpiarla.
+  useEffect(() => {
+    setSelectedDepartmentId('')
+    setSelectedPositionName('')
+  }, [useComputedDepartments])
+
+  const departmentsFetcher = useComputedDepartments
+    ? employeeService.listDepartmentsComputed
+    : employeeService.listDepartments
+  const positionsFetcher = useComputedDepartments
+    ? employeeService.listPositionsComputed
+    : employeeService.listPositions
+
+  const departments = useAsyncData(departmentsFetcher, undefined, {
     errorMessage: 'No se pudo cargar los departamentos.',
   })
-  const positions = useAsyncData(employeeService.listPositions, selectedDepartmentId, {
+  const positions = useAsyncData(positionsFetcher, selectedDepartmentId, {
     enabled: Boolean(selectedDepartmentId),
     errorMessage: 'No se pudo cargar los cargos.',
   })
